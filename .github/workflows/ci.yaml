@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: --deny warnings
+  RUSTDOCFLAGS: --deny warnings
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install dependencies
+        run:
+          sudo apt-get update; sudo apt-get install --no-install-recommends
+          libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev mold clang
+
+      - name: Populate target directory from cache
+        uses: Leafwing-Studios/cargo-cache@v2
+        with:
+          sweep-cache: true
+
+      - name: Run tests
+        run: |
+          cargo test --locked --workspace --all-features --all-targets
+          # Running doc tests separately is a workaround for https://github.com/rust-lang/cargo/issues/6669
+          # Setting LD_LIBRARY_PATH is a workaround for https://github.com/TheBevyFlock/bevy_new_2d/pull/318#issuecomment-2585935350
+          LD_LIBRARY_PATH="$(rustc --print target-libdir)" cargo test --locked --workspace --all-features --doc
+
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+  doc:
+    name: Docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install dependencies
+        run:
+          sudo apt-get update; sudo apt-get install --no-install-recommends
+          libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev mold clang
+
+      - name: Populate target directory from cache
+        uses: Leafwing-Studios/cargo-cache@v2
+        with:
+          sweep-cache: true
+
+      - name: Check documentation
+        run:
+          cargo doc --locked --workspace --all-features --document-private-items
+          --no-deps
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+
+      - name: Install dependencies
+        run:
+          sudo apt-get update; sudo apt-get install --no-install-recommends
+          libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev mold clang
+
+      - name: Populate target directory from cache
+        uses: Leafwing-Studios/cargo-cache@v2
+        with:
+          sweep-cache: true
+
+      - name: Run clippy lints
+        run:
+          cargo clippy --locked --workspace --all-targets --all-features --
+          --deny warnings
+
+  taplo:
+    name: Taplo
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install dependencies
+        run:
+          sudo apt-get update; sudo apt-get install --no-install-recommends
+          libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev mold clang
+
+      - name: Populate target directory from cache
+        uses: Leafwing-Studios/cargo-cache@v2
+        with:
+          sweep-cache: true
+
+      - name: Install Taplo (if not installed)
+        run: |
+          if [ -z "$(command -v taplo)" ]; then
+            cargo install taplo-cli
+          fi
+
+      - name: Run Taplo
+        run: taplo format --check
+
+  prettier:
+    name: Prettier
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
+      - name: Install Prettier
+        run: npm install --save-dev prettier
+
+      - name: Run Prettier
+        run: npx prettier --check "./**/*.{json,yaml}"
+
+  markdownlint:
+    name: Markdownlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
+      - name: Install Markdownlint
+        run: npm install --save-dev markdownlint-cli
+
+      - name: Run Markdownlint
+        run: npx markdownlint "./**/*.md"

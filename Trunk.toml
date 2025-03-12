@@ -1,0 +1,9 @@
+[build]
+target     = "web/index.html"
+dist       = "target/trunk"
+public_url = "./"
+
+[serve]
+no_spa    = true
+open      = true
+addresses = ["127.0.0.1", "::1"]

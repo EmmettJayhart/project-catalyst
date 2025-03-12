@@ -1,0 +1,41 @@
+[package]
+name        = "project-catalyst"
+authors     = ["Emmett Jayhart <23242564+EmmettJayhart@users.noreply.github.com>"]
+version     = "25.11.2"
+edition     = "2021"
+description = "A game made in bevy, fate unknown"
+readme      = "README.md"
+repository  = "https://github.com/EmmettJayhart/project-catalyst"
+license     = "Apache-2.0 OR MIT"
+publish     = false
+resolver    = "2"
+
+[dependencies]
+bevy = { version = "0.15", features = ["wayland"] }
+rand = "0.9"
+log = { version = "0.4", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
+tracing = { version = "0.1", features = [
+    "max_level_debug",
+    "release_max_level_warn",
+] }
+
+[features]
+default = [
+    "dev_native",
+]
+dev = [
+    "bevy/dynamic_linking",
+    "bevy/bevy_dev_tools",
+]
+dev_native = [
+    "dev",
+    "bevy/file_watcher",
+    "bevy/embedded_watcher",
+]
+
+[dependencies.getrandom]
+version  = "0.3.1"
+features = ["wasm_js"]
